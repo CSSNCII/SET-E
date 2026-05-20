@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Computer Systems Servicing Practice Exam (Interactive Cards + Sound)</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.5; background: #f3f4f6; color: #1f2937; padding: 20px; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; transition: background-color 0.4s ease; }
+        .quiz-container { width: 100%; max-width: 600px; background: white; padding: 35px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; box-sizing: border-box; transition: background-color 0.2s ease, transform 0.2s ease; }
+        h1 { color: #1e40af; margin-top: 0; margin-bottom: 5px; font-size: 1.6rem; }
+        .progress-bar-container { background: #e5e7eb; height: 6px; border-radius: 3px; margin: 25px 0; overflow: hidden; }
+        .progress-bar { background: #1e40af; height: 100%; width: 0%; transition: width 0.3s ease; }
+        .progress-text { font-size: 0.9rem; color: #6b7280; font-weight: 500; }
+        .q-card { display: none; margin-top: 20px; text-align: left; }
+        .q-card.active { display: block; }
+        .q-text { font-weight: 600; font-size: 1.2rem; margin-bottom: 20px; color: #111827; }
+        .opt { background: #f9fafb; border: 1px solid #e5e7eb; padding: 16px; margin-bottom: 12px; border-radius: 10px; cursor: pointer; transition: all 0.2s ease; font-size: 1rem; }
+        .opt:hover { background: #f3f4f6; border-color: #d1d5db; }
+        .correct { background: #d1fae5 !important; border-color: #34d399 !important; color: #065f46; font-weight: 600; }
+        .wrong { background: #fee2e2 !important; border-color: #f87171 !important; color: #991b1b; }
+        .status { font-weight: bold; margin-top: 15px; font-size: 1rem; display: none; text-align: center; }
+        .nav-zone { margin-top: 25px; display: flex; justify-content: space-between; height: 45px; }
+        .btn-nav { background: #4b5563; color: white; border: none; padding: 10px 20px; font-size: 1rem; font-weight: 600; border-radius: 8px; cursor: pointer; display: none; text-decoration: none; }
+        .btn-nav:hover { background: #374151; }
+        #next-btn { background: #1e40af; display: none; margin-left: auto; }
+        #next-btn:hover { background: #1d4ed8; }
+        .results-view { display: none; margin-top: 10px; }
+        .score-banner { font-size: 1.5rem; font-weight: bold; color: #111827; margin-bottom: 25px; }
+        .btn-reset { background: #1e40af; color: white; border: none; padding: 14px 28px; font-size: 1.1rem; font-weight: 600; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+        .btn-reset:hover { background: #1d4ed8; }
+        .flash-correct { background-color: #ecfdf5 !important; }
+        .flash-wrong { background-color: #fef2f2 !important; }
+    </style>
+</head>
+<body>
+<div id="main-container" class="quiz-container">
+    <div id="quiz-main-view">
+        <h1>Computer Systems Servicing Practice Exam (SET E)</h1>
+        <div class="progress-bar-container">
+            <div id="progress-indicator" class="progress-bar"></div>
+        </div>
+        <div id="progress-label" class="progress-text">Question 1 of 30</div>
+
+        <div id="quiz-load-zone"></div>
+
+        <div class="nav-zone">
+            <button id="prev-btn" class="btn-nav" onclick="goToPrevQuestion()">← Back</button>
+            <button id="next-btn" class="btn-nav" onclick="goToNextQuestion()">Next Question →</button>
+        </div>
+    </div>
+
+    <div id="results-zone" class="results-view">
+        <h1>Exam Evaluation</h1>
+        <div id="score-display" class="score-banner"></div>
+        <button class="btn-reset" onclick="initQuiz()">Retake Quiz</button>
+    </div>
+</div>
+
+<script>
+// Fixed dataset extracted strictly from questions 91 to 120 of your document
+const staticQuizPool = [
+  {q: "__ is an interface standard for a serial bus for high-speed communications also referred as Institute of Electrical and Electronics Engineers (IEEE) 1394 interface.", a: "Firewire", d: ["Thunderbolt", "SATA Express", "USB 4.0"]},
+  {q: "A microchip to manage data communication between a CPU and a motherboard.", a: "Input/output controller hub", d: ["Northbridge controller", "Cache directory block", "Clock generator chip"]},
+  {q: "A setup option in Unified Extensible Firmware Interface (UEFI)/Basic Input Output System (BIOS) that allows security settings to perform such tasks as locating the device.", a: "LoJack", d: ["Secure Boot", "BitLocker ID", "TPM Provisioning"]},
+  {q: "A text based command used for creating bootable flash drive.", a: "Diskpart", d: ["Chkdsk", "Format", "Attrib"]},
+  {q: "What is the minimum Random Access Memory (RAM) requirement of Server 2008 R2?", a: "512MB", d: ["1GB", "2GB", "4GB"]},
+  {q: "In Windows 7, an indicator tells that a video driver has not installed.", a: "Only standard video is displayed", d: ["The screen turns completely blue", "Device Manager disables display ports", "Resolution defaults to 4K mode"]},
+  {q: "A volt meter reading of a shorted diode.", a: "Zero volt", d: ["Infinite volts", "0.7 volts", "1.2 volts"]},
+  {q: "__ is the process of joining two cable ends together.", a: "Cable splicing", d: ["Cable crimping", "Cable stripping", "Cable shielding"]},
+  {q: "What is a hardware device that enables to connect serial devices across a network?", a: "Terminal server", d: ["Proxy server", "Network switch", "Media converter"]},
+  {q: "What class of IP addressing is 10.10.10.1?", a: "Class A", d: ["Class B", "Class C", "Class D"]},
+  {q: "How many device can connect to a wireless router?", a: "250", d: ["50", "100", "Unlimited"]},
+  {q: "A device that acts as a bridge between wireless clients and wired network is__", a: "Access point", d: ["Network switch", "Hardware firewall", "Core router"]},
+  {q: "A logical subnetwork that groups collection of devices from the same network switch.", a: "Virtual local area network", d: ["Storage area network", "Metropolitan area network", "Wide area network"]},
+  {q: "It is the time lapse between data sent and when received, it can have a big impact on performance.", a: "Latency", d: ["Bandwidth", "Throughput", "Attenuation"]},
+  {q: "__ which means pushing component to its limits and extremes.", a: "Stress test", d: ["Loopback test", "Continuity test", "Diagnostic trace"]},
+  {q: "What type of server that enables large numbers users to exchange information near instantaneously and formerly known as internet relay chat (IRC) servers?", a: "Real-time communication server", d: ["Directory server", "Application host", "Database broker"]},
+  {q: "It ensures that information and programs are changing only in a specified and authorized manner.", a: "Integrity", d: ["Confidentiality", "Availability", "Authentication"]},
+  {q: "What command-line network utility that displays networks connections for TCP and routing tables?", a: "Netstat", d: ["Nslookup", "Ping", "Tracert"]},
+  {q: "What set of rules that describe how software and hardware should interact within a network?", a: "Communications protocol", d: ["Subnet constraint parameters", "System environment drivers", "Security matrix guidelines"]},
+  {q: "What attach includes the execution of viruses, worms, Trojan horses, and active web scripts with the intent to destroy or steal information?", a: "Malicious code", d: ["Spoofing injection", "Extortion script", "Packet sniffing"]},
+  {q: "Set of rules for transferring files such as text, graphic images, sound, video and other multimedia files, on the World Wide Web (WWW).", a: "Hypertext transfer protocol (HTTP)", d: ["File transfer protocol (FTP)", "Simple mail transfer protocol (SMTP)", "Network time protocol (NTP)"]},
+  {q: "What is the traditional method used to access server data and using the server message block protocol over TCP/IP?", a: "Windows folder sharing", d: ["Active Directory federation", "Lightweight directory access", "Network load balancing pool"]},
+  {q: "What two command-line utilities used to export and import active directory object information?", a: "Ldifde.exe and csvde.exe", d: ["Diskpart.exe and chkdsk.exe", "Nslookup.exe and netstat.exe", "Ipconfig.exe and ping.exe"]},
+  {q: "A node in a computer network that allows data to flow from one discrete network to another.", a: "Gateway", d: ["Repeater", "Switch hub", "Loopback port"]},
+  {q: "What electrical quantities measured when performing continuity testing of twisted pair cable?", a: "Resistance", d: ["Voltage drop", "Current flow", "Capacitance rate"]},
+  {q: "What type of backup used in hard drive, disc, flash drive and external drive that are housed on site?", a: "Local backup", d: ["Cloud backup", "Differential trace pool", "Redundant system mirror"]},
+  {q: "What recovery tool in Windows fixes and scans computer problem that prevents computer from booting repeatedly?", a: "Startup repair", d: ["Safe mode mode", "Diskpart utility", "System configuration sweep"]},
+  {q: "__ used to run commands for troubleshooting unbootable operating system.", a: "Windows recovery environment", d: ["BIOS advanced chipset setup", "Task Manager run prompt", "Control Panel console interface"]},
+  {q: "Which of the following electronic components need to discharge electrically before the replacement of parts?", a: "Capacitor", d: ["Resistor core", "Diode switch", "Transistor bridge"]},
+  {q: "The most current wireless networking standard and can communicate with the older network standards.", a: "802.11n", d: ["802.11b", "802.11g", "802.11a"]}
+];
+
+let activeQuestions = [];
+let currentQuestionIndex = 0;
+let userAnswers = {};
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(type) {
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    if (type === 'correct') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+        osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+    } else if (type === 'wrong') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.2);
+        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.25);
+    } else if (type === 'complete') {
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, index) => {
+            const individualOsc = audioCtx.createOscillator();
+            const individualGain = audioCtx.createGain();
+            individualOsc.type = 'sine';
+            individualOsc.frequency.setValueAtTime(freq, audioCtx.currentTime + (index * 0.08));
+            individualGain.gain.setValueAtTime(0.2, audioCtx.currentTime + (index * 0.08));
+            individualGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + (index * 0.08) + 0.2);
+            individualOsc.connect(individualGain);
+            individualGain.connect(audioCtx.destination);
+            individualOsc.start(audioCtx.currentTime + (index * 0.08));
+            individualOsc.stop(audioCtx.currentTime + (index * 0.08) + 0.2);
+        });
+    }
+}
+
+function initQuiz() {
+    const zone = document.getElementById('quiz-load-zone');
+    const mainView = document.getElementById('quiz-main-view');
+    const resultsZone = document.getElementById('results-zone');
+    
+    zone.innerHTML = "";
+    currentQuestionIndex = 0;
+    userAnswers = {};
+    
+    mainView.style.display = "block";
+    resultsZone.style.display = "none";
+
+    activeQuestions = [...staticQuizPool];
+    activeQuestions.sort(() => Math.random() - 0.5);
+
+    activeQuestions.forEach((item, idx) => {
+        let options = [...item.d, item.a];
+        options.sort(() => Math.random() - 0.5);
+
+        let qCard = document.createElement('div');
+        qCard.className = `q-card ${idx === 0 ? 'active' : ''}`;
+        qCard.setAttribute('id', `q-card-${idx}`);
+        
+        let qText = document.createElement('div');
+        qText.className = 'q-text';
+        qText.textContent = item.q;
+        qCard.appendChild(qText);
+
+        options.forEach(opt => {
+            let optDiv = document.createElement('div');
+            optDiv.className = 'opt';
+            optDiv.textContent = opt;
+            optDiv.onclick = function() { checkAnswer(this, opt === item.a, idx); };
+            qCard.appendChild(optDiv);
+        });
+
+        let statusDiv = document.createElement('div');
+        statusDiv.className = 'status';
+        qCard.appendChild(statusDiv);
+
+        zone.appendChild(qCard);
+    });
+
+    updateNavigationLayout();
+}
+
+function updateNavigationLayout() {
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const mainContainer = document.getElementById('main-container');
+    
+    mainContainer.classList.remove('flash-correct', 'flash-wrong');
+    prevBtn.style.display = currentQuestionIndex > 0 ? "inline-block" : "none";
+
+    if (userAnswers[currentQuestionIndex] !== undefined) {
+        nextBtn.style.display = "inline-block";
+        nextBtn.textContent = currentQuestionIndex === activeQuestions.length - 1 ? "Finish Exam" : "Next Question →";
+    } else {
+        nextBtn.style.display = "none";
+    }
+
+    const progressIndicator = document.getElementById('progress-indicator');
+    const progressLabel = document.getElementById('progress-label');
+    const percent = (currentQuestionIndex / activeQuestions.length) * 100;
+    
+    progressIndicator.style.width = `${percent}%`;
+    progressLabel.textContent = `Question ${currentQuestionIndex + 1} of ${activeQuestions.length}`;
+}
+
+function checkAnswer(selectedElement, isCorrect, cardIdx) {
+    const parentCard = selectedElement.parentElement;
+    if (userAnswers[cardIdx] !== undefined) return;
+    
+    const allOptions = parentCard.querySelectorAll('.opt');
+    const statusText = parentCard.querySelector('.status');
+    const nextBtn = document.getElementById('next-btn');
+    const mainContainer = document.getElementById('main-container');
+    
+    userAnswers[cardIdx] = { selected: selectedElement.textContent, isCorrect: isCorrect };
+
+    if (isCorrect) {
+        selectedElement.classList.add('correct');
+        statusText.textContent = "✓ Correct Answer";
+        statusText.style.color = "#059669";
+        mainContainer.classList.add('flash-correct');
+        playSound('correct');
+    } else {
+        selectedElement.classList.add('wrong');
+        statusText.textContent = "✗ Incorrect";
+        statusText.style.color = "#dc2626";
+        mainContainer.classList.add('flash-wrong');
+        playSound('wrong');
+        
+        allOptions.forEach(opt => {
+            if (opt.textContent === activeQuestions[cardIdx].a) {
+                opt.classList.add('correct');
+            }
+        });
+    }
+    statusText.style.display = "block";
+    
+    nextBtn.textContent = currentQuestionIndex === activeQuestions.length - 1 ? "Finish Exam" : "Next Question →";
+    nextBtn.style.display = "inline-block";
+}
+
+function goToNextQuestion() {
+    const currentCard = document.getElementById(`q-card-${currentQuestionIndex}`);
+    currentCard.classList.remove('active');
+    
+    currentQuestionIndex++;
+    
+    if (currentQuestionIndex < activeQuestions.length) {
+        const nextCard = document.getElementById(`q-card-${currentQuestionIndex}`);
+        nextCard.classList.add('active');
+        updateNavigationLayout();
+    } else {
+        showFinalMetrics();
+    }
+}
+
+function goToPrevQuestion() {
+    if (currentQuestionIndex === 0) return;
+    
+    const currentCard = document.getElementById(`q-card-${currentQuestionIndex}`);
+    currentCard.classList.remove('active');
+    
+    currentQuestionIndex--;
+    
+    const prevCard = document.getElementById(`q-card-${currentQuestionIndex}`);
+    prevCard.classList.add('active');
+    
+    updateNavigationLayout();
+    
+    const mainContainer = document.getElementById('main-container');
+    if (userAnswers[currentQuestionIndex].isCorrect) {
+        mainContainer.classList.add('flash-correct');
+    } else {
+        mainContainer.classList.add('flash-wrong');
+    }
+}
+
+function showFinalMetrics() {
+    document.getElementById('quiz-main-view').style.display = "none";
+    const resultsZone = document.getElementById('results-zone');
+    const scoreDisplay = document.getElementById('score-display');
+    
+    let correctCount = Object.values(userAnswers).filter(ans => ans.isCorrect).length;
+    const total = activeQuestions.length;
+    
+    scoreDisplay.textContent = `Your Score: ${correctCount} / ${total} (${Math.round((correctCount / total) * 100)}%)`;
+    resultsZone.style.display = "block";
+    playSound('complete');
+}
+
+window.onload = initQuiz;
+</script>
+</body>
+</html>
